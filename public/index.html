@@ -131,4 +131,132 @@
           <g id="lowerBeak"
              style="transform-origin: 140px 150px; transform-box: fill-box;">
             <path
-              d="M1
+              d="M140 150
+                 C164 154 182 164 190 178
+                 C168 186 154 184 140 178
+                 C126 184 112 186 90 178
+                 C98 164 116 154 140 150 Z"
+              fill="#d9941e"
+            />
+          </g>
+
+          <!-- Chest -->
+          <ellipse cx="140" cy="195" rx="70" ry="55" fill="#6a4f3b"/>
+        </svg>
+
+        <div class="status" id="status">Ready to chat, Little Wing.</div>
+      </div>
+
+      <!-- CHAT AREA -->
+      <div class="card">
+        <div id="log"></div>
+
+        <div class="controls">
+          <input id="text" placeholder="Ask Captain Talon…" />
+          <button id="send">Send</button>
+          <button id="mute">🔊 On</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const log = document.getElementById("log");
+  const text = document.getElementById("text");
+  const sendBtn = document.getElementById("send");
+  const muteBtn = document.getElementById("mute");
+  const statusEl = document.getElementById("status");
+  const eagleSvg = document.getElementById("eagle");
+  const lowerBeak = document.getElementById("lowerBeak");
+
+  let muted = false;
+  let history = [];
+  let talkTimer = null;
+
+  function addMsg(role, content) {
+    const div = document.createElement("div");
+    div.className = `msg ${role === "user" ? "me" : "bot"}`;
+    div.innerHTML = `<span class="label">${role === "user" ? "You:" : "Captain Talon:"}</span>${content}`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  async function ask() {
+    const q = text.value.trim();
+    if (!q) return;
+
+    addMsg("user", q);
+    history.push({ role: "user", content: q });
+    text.value = "";
+
+    sendBtn.disabled = true;
+    statusEl.textContent = "Captain Talon is thinking…";
+
+    try {
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userText: q, history })
+      });
+
+      const data = await r.json();
+      const reply = data.reply || "Screee!";
+
+      addMsg("assistant", reply);
+      history.push({ role: "assistant", content: reply });
+      speak(reply);
+
+    } catch {
+      addMsg("assistant", "Screee… trouble in the wind!");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.onclick = ask;
+  text.onkeydown = e => e.key === "Enter" && ask();
+
+  muteBtn.onclick = () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? "🔇 Off" : "🔊 On";
+    speechSynthesis.cancel();
+  };
+
+  function speak(text) {
+    if (muted || !window.speechSynthesis) return;
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.02;
+    u.pitch = 0.9;
+
+    u.onstart = startTalking;
+    u.onend = stopTalking;
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+
+  function startTalking() {
+    statusEl.textContent = "Captain Talon is speaking…";
+    eagleSvg.classList.add("talking");
+
+    let open = false;
+    talkTimer = setInterval(() => {
+      open = !open;
+      lowerBeak.style.transform = open ? "rotate(10deg)" : "rotate(0deg)";
+    }, 120);
+  }
+
+  function stopTalking() {
+    statusEl.textContent = "Ready to chat, Little Wing.";
+    eagleSvg.classList.remove("talking");
+
+    clearInterval(talkTimer);
+    lowerBeak.style.transform = "rotate(0deg)";
+  }
+
+  addMsg("assistant", "Screee! Hello, Little Wing! Ask me about eagles!");
+</script>
+
+</body>
+</html>
