@@ -6,513 +6,80 @@
   <title>Captain Talon — Eagle Chat</title>
 
   <style>
-    body {
-      font-family: system-ui, Arial, sans-serif;
-      margin: 0;
-      background: #0b1220;
-      color: #eaf2ff;
-    }
+    body { font-family: system-ui, Arial, sans-serif; margin: 0; background:#0b1220; color:#eaf2ff; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 18px; display:grid; gap:16px; }
+    .card { background:#121c33; border:1px solid #243155; border-radius:16px; padding:14px; }
+    .row { display:grid; grid-template-columns: 380px 1fr; gap:16px; }
+    @media (max-width:900px){ .row{ grid-template-columns:1fr; } }
+    #log { height:440px; overflow-y:auto; padding:10px; background:#0f1730; border-radius:12px; border:1px solid #243155; }
+    .msg { margin:10px 0; line-height:1.35; }
+    .me{ color:#b8d7ff; } .bot{ color:#ffe7a6; } .label{ font-weight:700; margin-right:6px; }
+    .controls{ display:grid; grid-template-columns:1fr auto auto; gap:10px; margin-top:10px; align-items:center; }
+    input{ padding:12px; border-radius:12px; border:1px solid #243155; background:#0f1730; color:#eaf2ff; }
+    button{ padding:12px 14px; border-radius:12px; border:1px solid #243155; background:#1b2a52; color:#eaf2ff; cursor:pointer; font-weight:600; }
+    button:hover{ filter:brightness(1.08); }
+    .eagleBox{ display:grid; gap:10px; justify-items:center; align-content:start; }
+    .status{ font-size:14px; opacity:.9; text-align:center; }
+    .chips{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+    .chip{ padding:8px 10px; border-radius:999px; font-size:14px; }
 
-    .wrap {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 18px;
-      display: grid;
-      gap: 16px;
-    }
+    .idleFloat{ animation: floaty 2.4s ease-in-out infinite; }
+    @keyframes floaty{ 0%{transform:translateY(0)} 50%{transform:translateY(-3px)} 100%{transform:translateY(0)} }
+    .talkingPulse{ animation: pulse 0.6s infinite alternate; }
+    @keyframes pulse{ from{transform:scale(1)} to{transform:scale(1.02)} }
 
-    .card {
-      background: #121c33;
-      border: 1px solid #243155;
-      border-radius: 16px;
-      padding: 14px;
-    }
+    .lid{ transform-origin:center; transform:scaleY(0); transition:transform 90ms ease-in-out; }
+    .blinkNow .lid{ transform:scaleY(1); }
+    #lowerBeak{ transition: transform 90ms ease-in-out; }
 
-    .row {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 16px;
-    }
-
-    @media (max-width: 900px) {
-      .row { grid-template-columns: 1fr; }
-    }
-
-    #log {
-      height: 420px;
-      overflow-y: auto;
-      padding: 10px;
-      background: #0f1730;
-      border-radius: 12px;
-      border: 1px solid #243155;
-    }
-
-    .msg { margin: 10px 0; line-height: 1.35; }
-    .me { color: #b8d7ff; }
-    .bot { color: #ffe7a6; }
-    .label { font-weight: 700; margin-right: 6px; }
-
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    input {
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #243155;
-      background: #0f1730;
-      color: #eaf2ff;
-    }
-
-    button {
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid #243155;
-      background: #1b2a52;
-      color: #eaf2ff;
-      cursor: pointer;
-    }
-
-    button:hover { filter: brightness(1.08); }
-
-    .eagleBox {
-      display: grid;
-      gap: 10px;
-      justify-items: center;
-    }
-
-    .status { font-size: 14px; opacity: .9; }
-
-    .talking {
-      animation: pulse 0.6s infinite alternate;
-    }
-
-    @keyframes pulse {
-      from { transform: scale(1); }
-      to { transform: scale(1.03); }
-    }
+    .overlay{ position:fixed; inset:0; background:rgba(5,10,20,.78); display:grid; place-items:center; z-index:50; padding:20px; }
+    .overlayCard{ max-width:720px; width:100%; background:#121c33; border:1px solid #243155; border-radius:18px; padding:18px; text-align:center; }
+    .overlayCard h2{ margin:6px 0 8px; }
+    .overlayCard p{ margin:0 0 14px; opacity:.9; }
+    .bigBtn{ font-size:18px; padding:14px 18px; border-radius:14px; }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>🦅 Captain Talon — Eagle Chat</h1>
-
-    <div class="row">
-      <div class="card eagleBox">
-
-        <!-- EAGLE SVG -->
-        <svg id="eagle" width="280" height="280" viewBox="0 0 280 280">
-          <!-- Body -->
-          <circle cx="140" cy="155" r="110" fill="#3c2f24"/>
-          <!-- Head -->
-          <circle cx="140" cy="110" r="78" fill="#f2f2f2"/>
-
-          <!-- Eyes -->
-          <circle cx="110" cy="95" r="10" fill="#111"/>
-          <circle cx="170" cy="95" r="10" fill="#111"/>
-          <circle cx="113" cy="92" r="3" fill="#fff"/>
-          <circle cx="173" cy="92" r="3" fill="#fff"/>
-
-          <!-- Upper Beak -->
-          <path
-            d="M140 112
-               C170 112 195 130 205 152
-               C180 160 160 158 140 150
-               C120 158 100 160 75 152
-               C85 130 110 112 140 112 Z"
-            fill="#f0b429"
-          />
-
-          <!-- Lower Beak (HINGED) -->
-          <g id="lowerBeak"
-             style="transform-origin: 140px 150px; transform-box: fill-box;">
-            <path
-              d="M140 150
-                 C164 154 182 164 190 178
-                 C168 186 154 184 140 178
-                 C126 184 112 186 90 178
-                 C98 164 116 154 140 150 Z"
-              fill="#d9941e"
-            />
-          </g>
-
-          <!-- Chest -->
-          <ellipse cx="140" cy="195" rx="70" ry="55" fill="#6a4f3b"/>
-        </svg>
-
-        <div class="status" id="status">Ready to chat, Little Wing.</div>
-      </div>
-
-      <!-- CHAT AREA -->
-      <div class="card">
-        <div id="log"></div>
-
-        <div class="controls">
-          <input id="text" placeholder="Ask Captain Talon…" />
-          <button id="send">Send</button>
-          <button id="mute">🔊 On</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-<script>
-  const log = document.getElementById("log");
-  const text = document.getElementById("text");
-  const sendBtn = document.getElementById("send");
-  const muteBtn = document.getElementById("mute");
-  const statusEl = document.getElementById("status");
-  const eagleSvg = document.getElementById("eagle");
-  const lowerBeak = document.getElementById("lowerBeak");
-
-  let muted = false;
-  let history = [];
-  let talkTimer = null;
-
-  function addMsg(role, content) {
-    const div = document.createElement("div");
-    div.className = `msg ${role === "user" ? "me" : "bot"}`;
-    div.innerHTML = `<span class="label">${role === "user" ? "You:" : "Captain Talon:"}</span>${content}`;
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
-  }
-
-  async function ask() {
-    const q = text.value.trim();
-    if (!q) return;
-
-    addMsg("user", q);
-    history.push({ role: "user", content: q });
-    text.value = "";
-
-    sendBtn.disabled = true;
-    statusEl.textContent = "Captain Talon is thinking…";
-
-    try {
-      const r = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userText: q, history })
-      });
-
-      const data = await r.json();
-      const reply = data.reply || "Screee!";
-
-      addMsg("assistant", reply);
-      history.push({ role: "assistant", content: reply });
-      speak(reply);
-
-    } catch {
-      addMsg("assistant", "Screee… trouble in the wind!");
-    } finally {
-      sendBtn.disabled = false;
-    }
-  }
-
-  sendBtn.onclick = ask;
-  text.onkeydown = e => e.key === "Enter" && ask();
-
-  muteBtn.onclick = () => {
-    muted = !muted;
-    muteBtn.textContent = muted ? "🔇 Off" : "🔊 On";
-    speechSynthesis.cancel();
-  };
-
-  function speak(text) {
-    if (muted || !window.speechSynthesis) return;
-
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.02;
-    u.pitch = 0.9;
-
-    u.onstart = startTalking;
-    u.onend = stopTalking;
-
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }
-
-  function startTalking() {
-    statusEl.textContent = "Captain Talon is speaking…";
-    eagleSvg.classList.add("talking");
-
-    let open = false;
-    talkTimer = setInterval(() => {
-      open = !open;
-      lowerBeak.style.transform = open ? "rotate(10deg)" : "rotate(0deg)";
-    }, 120);
-  }
-
-  function stopTalking() {
-    statusEl.textContent = "Ready to chat, Little Wing.";
-    eagleSvg.classList.remove("talking");
-
-    clearInterval(talkTimer);
-    lowerBeak.style.transform = "rotate(0deg)";
-  }
-
-  addMsg("assistant", "Screee! Hello, Little Wing! Ask me about eagles!");
-</script>
-
-</body>
-</html>
-✅ What to do now
-Replace public/index.html completely with this file
-
-Commit to GitHub
-
-Let Render auto-deploy (or click Manual Deploy)
-
-Refresh your site
-
-You should now see:
-
-Smooth hinged beak talking
-
-No weird mouth warping
-
-Much more “alive” eagle on the projector
-
-Optional upgrades (easy & impressive)
-If you want next:
-
-🦅 Blinking eyes
-
-🎤 Beak opens wider for louder words
-
-🎬 Auto-intro when page loads
-
-Just tell me — and seriously, great job sticking with this. This is an incredible presentation ending 👏
-
-
-
-
-
-
-
-You said:
-can we do all of your upgrades? Also have the eagle say something like this is an awesome presentation Austin.
-
-
-ChatGPT said:
-
-Thought for 10s
-Yep — let’s do all the upgrades:
-
-✅ Blinking eyes
-✅ Smoother talking (no jerky flap)
-✅ Mouth opens “more” based on the words (variable beak angle)
-✅ Auto-intro that includes: “This is an awesome presentation, Austin!”
-✅ A big START button (important because most browsers block auto-audio until the first click)
-
-Below is a complete replacement for your public/index.html. Copy/paste the whole thing, commit to GitHub, and Render will redeploy.
-
-✅ COMPLETE public/index.html (ALL UPGRADES)
-html
-Copy code
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Captain Talon — Eagle Chat</title>
-
-  <style>
-    body {
-      font-family: system-ui, Arial, sans-serif;
-      margin: 0;
-      background: #0b1220;
-      color: #eaf2ff;
-    }
-
-    .wrap {
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 18px;
-      display: grid;
-      gap: 16px;
-    }
-
-    .card {
-      background: #121c33;
-      border: 1px solid #243155;
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 16px;
-    }
-
-    @media (max-width: 900px) {
-      .row { grid-template-columns: 1fr; }
-    }
-
-    #log {
-      height: 440px;
-      overflow-y: auto;
-      padding: 10px;
-      background: #0f1730;
-      border-radius: 12px;
-      border: 1px solid #243155;
-    }
-
-    .msg { margin: 10px 0; line-height: 1.35; }
-    .me { color: #b8d7ff; }
-    .bot { color: #ffe7a6; }
-    .label { font-weight: 700; margin-right: 6px; }
-
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 10px;
-      margin-top: 10px;
-      align-items: center;
-    }
-
-    input {
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #243155;
-      background: #0f1730;
-      color: #eaf2ff;
-    }
-
-    button {
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid #243155;
-      background: #1b2a52;
-      color: #eaf2ff;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button:hover { filter: brightness(1.08); }
-
-    .eagleBox {
-      display: grid;
-      gap: 10px;
-      justify-items: center;
-      align-content: start;
-    }
-
-    .status { font-size: 14px; opacity: .9; text-align: center; }
-
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .chip { padding: 8px 10px; border-radius: 999px; font-size: 14px; }
-
-    /* Subtle “alive” float */
-    .idleFloat { animation: floaty 2.4s ease-in-out infinite; }
-    @keyframes floaty {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-3px); }
-      100% { transform: translateY(0px); }
-    }
-
-    /* Talking pulse */
-    .talkingPulse { animation: pulse 0.6s infinite alternate; }
-    @keyframes pulse {
-      from { transform: scale(1); }
-      to { transform: scale(1.02); }
-    }
-
-    /* Eyelid blink animation (only when we add .blinkNow via JS) */
-    .lid {
-      transform-origin: center;
-      transform: scaleY(0);
-      opacity: 1;
-      transition: transform 90ms ease-in-out;
-    }
-    .blinkNow .lid { transform: scaleY(1); }
-
-    /* Smoother beak motion */
-    #lowerBeak { transition: transform 90ms ease-in-out; }
-
-    /* Big Start overlay (for audio permission) */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(5, 10, 20, 0.78);
-      display: grid;
-      place-items: center;
-      z-index: 50;
-      padding: 20px;
-    }
-    .overlayCard{
-      max-width: 720px;
-      width: 100%;
-      background: #121c33;
-      border: 1px solid #243155;
-      border-radius: 18px;
-      padding: 18px;
-      text-align: center;
-    }
-    .overlayCard h2 { margin: 6px 0 8px; }
-    .overlayCard p { margin: 0 0 14px; opacity: .9; }
-    .bigBtn { font-size: 18px; padding: 14px 18px; border-radius: 14px; }
-  </style>
-</head>
-
-<body>
-  <!-- Audio-permission overlay -->
+  <!-- IMPORTANT: inline onclick makes Start work even if event listeners fail -->
   <div id="overlay" class="overlay">
     <div class="overlayCard">
       <h2>🦅 Start Captain Talon</h2>
-      <p>
-        Click Start so the eagle can <b>talk out loud</b>, <b>blink</b>, and make <b>eagle sounds</b>.
-        (Browsers require one click to allow audio.)
-      </p>
-      <button id="startBtn" class="bigBtn">Start</button>
+      <p>Click Start so the eagle can talk out loud, blink, and make eagle sounds.</p>
+      <button id="startBtn" class="bigBtn" onclick="startCaptainTalon()">Start</button>
     </div>
   </div>
 
   <div class="wrap">
-    <h1 style="margin: 4px 0 0;">🦅 Captain Talon — Eagle Chat</h1>
+    <h1 style="margin:4px 0 0;">🦅 Captain Talon — Eagle Chat</h1>
 
     <div class="row">
-      <!-- Eagle panel -->
       <div class="card eagleBox">
         <svg id="eagle" class="idleFloat" width="300" height="300" viewBox="0 0 300 300" aria-label="Talking eagle">
-          <!-- Body -->
           <circle cx="150" cy="168" r="118" fill="#3c2f24"/>
-          <!-- Head -->
           <circle cx="150" cy="118" r="84" fill="#f2f2f2"/>
 
-          <!-- Eyes (white highlight + pupil) -->
           <circle cx="120" cy="104" r="11" fill="#111"/>
           <circle cx="180" cy="104" r="11" fill="#111"/>
           <circle cx="123" cy="101" r="3.2" fill="#fff"/>
           <circle cx="183" cy="101" r="3.2" fill="#fff"/>
 
-          <!-- Eyelids (blink covers) -->
           <g id="blinkGroup">
-            <!-- Left lid -->
             <rect class="lid" id="lidL" x="103" y="90" width="34" height="28" rx="12" fill="#f2f2f2"/>
-            <!-- Right lid -->
             <rect class="lid" id="lidR" x="163" y="90" width="34" height="28" rx="12" fill="#f2f2f2"/>
           </g>
 
-          <!-- Upper beak -->
           <path
-            d="M150 120
-               C182 120 208 140 218 164
+            d="M150 120 C182 120 208 140 218 164
                C190 172 168 170 150 162
                C132 170 110 172 82 164
                C92 140 118 120 150 120 Z"
             fill="#f0b429"
           />
 
-          <!-- Lower beak (HINGED rotation) -->
           <g id="lowerBeak" style="transform-origin: 150px 162px; transform-box: fill-box;">
             <path
-              d="M150 162
-                 C176 166 196 178 205 194
+              d="M150 162 C176 166 196 178 205 194
                  C180 204 162 202 150 196
                  C138 202 120 204 95 194
                  C104 178 124 166 150 162 Z"
@@ -520,7 +87,6 @@ Copy code
             />
           </g>
 
-          <!-- Chest -->
           <ellipse cx="150" cy="215" rx="76" ry="60" fill="#6a4f3b" opacity="0.95"/>
         </svg>
 
@@ -534,7 +100,6 @@ Copy code
         </div>
       </div>
 
-      <!-- Chat panel -->
       <div class="card">
         <div id="log" role="log" aria-label="Chat log"></div>
 
@@ -543,33 +108,24 @@ Copy code
           <button id="send">Send</button>
           <button id="mute">🔊 On</button>
         </div>
-
-        <p style="margin:10px 0 0; opacity:.85; font-size:13px;">
-          Tip: If the room is quiet, turn volume up a little. Captain Talon will speak and occasionally screech. 🙂
-        </p>
       </div>
     </div>
   </div>
 
 <script>
   const overlay = document.getElementById("overlay");
-  const startBtn = document.getElementById("startBtn");
-
   const log = document.getElementById("log");
   const text = document.getElementById("text");
   const sendBtn = document.getElementById("send");
   const muteBtn = document.getElementById("mute");
-
   const statusEl = document.getElementById("status");
   const eagleSvg = document.getElementById("eagle");
   const lowerBeak = document.getElementById("lowerBeak");
-  const blinkGroup = document.getElementById("blinkGroup");
 
   let muted = false;
   let history = [];
   let audioReady = false;
 
-  // --- Helpers ---
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, m => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
@@ -584,17 +140,15 @@ Copy code
     log.scrollTop = log.scrollHeight;
   }
 
-  // --- Eagle sound (WebAudio) ---
+  // WebAudio screech
   function playScreech() {
     if (!audioReady || muted) return;
-
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const o = ctx.createOscillator();
     const g = ctx.createGain();
-
-    // A slightly more “birdlike” screech sweep
-    o.type = "sawtooth";
     const t = ctx.currentTime;
+
+    o.type = "sawtooth";
     o.frequency.setValueAtTime(900, t);
     o.frequency.exponentialRampToValueAtTime(2300, t + 0.18);
     o.frequency.exponentialRampToValueAtTime(700,  t + 0.55);
@@ -603,40 +157,32 @@ Copy code
     g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.60);
 
-    o.connect(g);
-    g.connect(ctx.destination);
-
-    o.start(t);
-    o.stop(t + 0.62);
-
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + 0.62);
     o.onended = () => ctx.close();
   }
 
-  // --- Blinking ---
+  // Blink
   function blinkOnce() {
-    // Add a class to make eyelids close briefly
     eagleSvg.classList.add("blinkNow");
     setTimeout(() => eagleSvg.classList.remove("blinkNow"), 110);
   }
-
-  // Random blink timer
   function startBlinking() {
-    const schedule = () => {
-      const next = 2200 + Math.random() * 2600; // 2.2s to 4.8s
+    const loop = () => {
+      const next = 2200 + Math.random() * 2600;
       setTimeout(() => {
-        // sometimes double-blink
         blinkOnce();
         if (Math.random() < 0.18) setTimeout(blinkOnce, 170);
-        schedule();
+        loop();
       }, next);
     };
-    schedule();
+    loop();
   }
 
-  // --- Talking animation (variable beak open) ---
+  // Talking visuals (smooth beak)
   let talkTimer = null;
-  let currentOpenDeg = 0;
-  let targetOpenDeg = 0;
+  let currentOpen = 0;
+  let targetOpen = 0;
 
   function setBeak(deg) {
     lowerBeak.style.transform = `rotate(${deg}deg)`;
@@ -645,63 +191,51 @@ Copy code
   function startTalkingVisuals() {
     statusEl.textContent = "Captain Talon is speaking…";
     eagleSvg.classList.add("talkingPulse");
-
-    // Smoothly approach targetOpenDeg
     if (talkTimer) clearInterval(talkTimer);
+
     talkTimer = setInterval(() => {
-      const diff = targetOpenDeg - currentOpenDeg;
-      currentOpenDeg += diff * 0.35; // smoothing
-      // tiny idle movement
-      if (Math.abs(diff) < 0.2) currentOpenDeg *= 0.92;
-      setBeak(currentOpenDeg);
+      const diff = targetOpen - currentOpen;
+      currentOpen += diff * 0.35;
+      if (Math.abs(diff) < 0.2) currentOpen *= 0.92;
+      setBeak(currentOpen);
     }, 60);
   }
 
   function stopTalkingVisuals() {
     statusEl.textContent = "Ready to chat, Little Wing.";
     eagleSvg.classList.remove("talkingPulse");
-
-    targetOpenDeg = 0;
-    currentOpenDeg = 0;
+    targetOpen = 0;
+    currentOpen = 0;
     setBeak(0);
-
     if (talkTimer) clearInterval(talkTimer);
     talkTimer = null;
   }
 
-  // --- Speech (browser voice) + beak intensity per word ---
+  // Speak + word-boundary mouth intensity
   function speak(textToSpeak) {
     if (!audioReady || muted) return;
     if (!("speechSynthesis" in window)) return;
 
     window.speechSynthesis.cancel();
-
     const u = new SpeechSynthesisUtterance(textToSpeak);
     u.rate = 1.02;
     u.pitch = 0.9;
 
     u.onstart = () => {
       startTalkingVisuals();
-      // Optional: tiny screech at the start sometimes
       if (Math.random() < 0.35) setTimeout(playScreech, 120);
     };
 
-    // On each spoken word boundary, set a new target open angle
     u.onboundary = (ev) => {
       if (ev.name !== "word") return;
-
-      // Estimate intensity using the current word length
-      // (ev.charIndex points into the string)
       const idx = ev.charIndex || 0;
       const slice = textToSpeak.slice(idx, idx + 18);
       const word = (slice.match(/^[A-Za-z']+/) || [""])[0];
-
       const len = word.length;
       const base = 4;
-      const extra = Math.min(10, len); // cap
+      const extra = Math.min(10, len);
       const jitter = Math.random() * 2.5;
-
-      targetOpenDeg = base + (extra * 0.7) + jitter; // ~4–13 degrees
+      targetOpen = base + (extra * 0.7) + jitter; // ~4–13deg
     };
 
     u.onend = () => stopTalkingVisuals();
@@ -710,7 +244,6 @@ Copy code
     window.speechSynthesis.speak(u);
   }
 
-  // --- Chat request ---
   async function ask() {
     const q = text.value.trim();
     if (!q) return;
@@ -723,9 +256,6 @@ Copy code
     statusEl.textContent = "Captain Talon is thinking…";
 
     try {
-      // fun cue while waiting
-      if (Math.random() < 0.25) blinkOnce();
-
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -738,10 +268,7 @@ Copy code
       const reply = data.reply || "Screee! My eagle words drifted away!";
       addMsg("assistant", reply);
       history.push({ role: "assistant", content: reply });
-
       speak(reply);
-
-      // occasional screech after response begins
       if (Math.random() < 0.40) setTimeout(playScreech, 650);
 
     } catch (e) {
@@ -754,7 +281,6 @@ Copy code
     }
   }
 
-  // --- UI wiring ---
   sendBtn.addEventListener("click", ask);
   text.addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
 
@@ -772,27 +298,25 @@ Copy code
     });
   });
 
-  // --- Start button (unlocks audio + runs intro) ---
-  startBtn.addEventListener("click", () => {
-    audioReady = true;
-    overlay.style.display = "none";
+  // IMPORTANT: Global function so inline onclick works
+  window.startCaptainTalon = function startCaptainTalon() {
+    console.log("Start clicked!");
+    overlay.style.display = "none";               // you should SEE this immediately
+    statusEl.textContent = "Started! Little Wing, I’m ready.";
 
-    // kick off blinking loop once audio permission is granted
+    audioReady = true;
     startBlinking();
 
-    // Intro (includes your requested compliment)
     const intro = "Screee! This is an awesome presentation, Austin! I’m Captain Talon, a majestic bald eagle. Ask me anything about eagles, flying, nests, and nature—Little Wing!";
     addMsg("assistant", intro);
     history.push({ role: "assistant", content: intro });
-    speak(intro);
 
-    // Tiny celebratory screech
-    setTimeout(playScreech, 900);
-  });
+    // Try speech + sound (if iframe blocks it, you’ll still see overlay disappear)
+    try { speak(intro); } catch {}
+    setTimeout(() => { try { playScreech(); } catch {} }, 900);
+  };
 
-  // Initial chat line (no audio yet)
   addMsg("assistant", "Screee! Click Start so I can talk out loud, Little Wing!");
 </script>
-
 </body>
 </html>
