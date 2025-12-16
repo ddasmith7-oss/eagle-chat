@@ -1,246 +1,335 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Captain Talon — Eagle Chat</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Captain Talon — Eagle Chat</title>
 
-<style>
-body {
-  margin: 0;
-  font-family: system-ui, Arial;
-  background: #0b1220;
-  color: #eaf2ff;
-}
-.wrap {
-  max-width: 1000px;
-  margin: auto;
-  padding: 18px;
-  display: grid;
-  gap: 16px;
-}
-.card {
-  background: #121c33;
-  border: 1px solid #243155;
-  border-radius: 16px;
-  padding: 14px;
-}
-.row {
-  display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 16px;
-}
-@media (max-width: 900px) {
-  .row { grid-template-columns: 1fr; }
-}
-#log {
-  height: 420px;
-  overflow-y: auto;
-  padding: 10px;
-  background: #0f1730;
-  border-radius: 12px;
-  border: 1px solid #243155;
-}
-.msg { margin: 10px 0; }
-.me { color: #b8d7ff; }
-.bot { color: #ffe7a6; }
-.label { font-weight: 700; margin-right: 6px; }
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: #0b1220;
+      color: #eaf2ff;
+    }
 
-.controls {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 10px;
-  margin-top: 10px;
-}
-input {
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid #243155;
-  background: #0f1730;
-  color: #eaf2ff;
-}
-button {
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid #243155;
-  background: #1b2a52;
-  color: #eaf2ff;
-  cursor: pointer;
-}
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
 
-.status {
-  text-align: center;
-  font-size: 14px;
-  opacity: .9;
-}
+    .card {
+      background: #121c33;
+      border: 1px solid #243155;
+      border-radius: 16px;
+      padding: 14px;
+    }
 
-/* Talking animation helpers */
-#lowerBeak {
-  transform-origin: 210px 165px;
-  transition: transform 90ms ease-out;
-}
-#mouthGap {
-  opacity: 0;
-  transition: opacity 90ms ease-out;
-}
+    .row {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 16px;
+    }
 
-/* Overlay */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.75);
-  display: grid;
-  place-items: center;
-  z-index: 50;
-}
-.overlay button {
-  font-size: 20px;
-}
-</style>
+    @media (max-width: 900px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    h1 {
+      margin: 6px 0 0;
+    }
+
+    /* -------- Eagle GIF -------- */
+    .mediaBox {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      align-content: start;
+    }
+
+    #eagleGif {
+      width: 380px;
+      max-width: 100%;
+      border-radius: 16px;
+      border: 1px solid #243155;
+      background: #0f1730;
+      box-shadow: 0 12px 28px rgba(0,0,0,.35);
+      transition: transform 120ms ease-in-out, filter 120ms ease-in-out;
+    }
+
+    .talking #eagleGif {
+      transform: scale(1.03);
+      filter: brightness(1.05);
+    }
+
+    .status {
+      font-size: 14px;
+      opacity: 0.9;
+      text-align: center;
+    }
+
+    /* -------- Chat -------- */
+    #log {
+      height: 460px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #0f1730;
+      border-radius: 12px;
+      border: 1px solid #243155;
+    }
+
+    .msg {
+      margin: 10px 0;
+      line-height: 1.35;
+    }
+
+    .me { color: #b8d7ff; }
+    .bot { color: #ffe7a6; }
+
+    .label {
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
+    }
+
+    input {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #243155;
+      background: #0f1730;
+      color: #eaf2ff;
+    }
+
+    button {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #243155;
+      background: #1b2a52;
+      color: #eaf2ff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      filter: brightness(1.08);
+    }
+
+    /* -------- Start Overlay -------- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 10, 20, 0.78);
+      display: grid;
+      place-items: center;
+      z-index: 50;
+      padding: 20px;
+    }
+
+    .overlayCard {
+      max-width: 720px;
+      width: 100%;
+      background: #121c33;
+      border: 1px solid #243155;
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .overlayCard h2 {
+      margin: 6px 0 8px;
+    }
+
+    .overlayCard p {
+      margin: 0 0 14px;
+      opacity: 0.9;
+    }
+
+    .bigBtn {
+      font-size: 18px;
+      padding: 14px 18px;
+      border-radius: 14px;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="overlay" id="overlay">
-  <div class="card">
+<!-- Audio permission overlay -->
+<div id="overlay" class="overlay">
+  <div class="overlayCard">
     <h2>🦅 Start Captain Talon</h2>
-    <p>Click Start so the eagle can talk.</p>
-    <button onclick="startCaptain()">Start</button>
+    <p>Click Start so the eagle can talk out loud.</p>
+    <button class="bigBtn" onclick="startCaptainTalon()">Start</button>
   </div>
 </div>
 
 <div class="wrap">
-<h1>🦅 Captain Talon — Eagle Chat</h1>
+  <h1>🦅 Captain Talon — Eagle Chat</h1>
 
-<div class="row">
-<div class="card">
+  <div class="row">
+    <!-- Eagle GIF -->
+    <div class="card mediaBox" id="mediaCard">
+      <!-- IMPORTANT: this file must be public/eagle.gif -->
+      <img id="eagleGif" src="/eagle.gif" alt="Talking eagle animation">
+      <div class="status" id="status">Click Start to begin, Little Wing.</div>
+    </div>
 
-<!-- REALISTIC SIDE-PROFILE EAGLE -->
-<svg id="eagle" width="420" height="320" viewBox="0 0 420 320">
+    <!-- Chat -->
+    <div class="card">
+      <div id="log"></div>
 
-  <!-- Head -->
-  <ellipse cx="180" cy="170" rx="120" ry="100" fill="#f2f2f2"/>
-
-  <!-- Eye -->
-  <circle cx="170" cy="145" r="8" fill="#111"/>
-  <circle cx="173" cy="142" r="3" fill="#fff"/>
-
-  <!-- Upper beak -->
-  <path
-    d="M190 160
-       C260 150 320 165 360 185
-       C300 190 245 188 190 178 Z"
-    fill="#f0b429"/>
-
-  <!-- Mouth gap (dark interior) -->
-  <path
-    id="mouthGap"
-    d="M190 178
-       C250 185 290 195 320 210
-       C260 215 230 210 190 200 Z"
-    fill="#2b1b16"/>
-
-  <!-- Lower beak (HINGED) -->
-  <g id="lowerBeak">
-    <path
-      d="M190 178
-         C255 190 305 210 335 235
-         C260 235 230 225 190 215 Z"
-      fill="#d9941e"/>
-  </g>
-
-</svg>
-
-<div class="status" id="status">Click Start to begin, Little Wing.</div>
-</div>
-
-<div class="card">
-  <div id="log"></div>
-  <div class="controls">
-    <input id="text" placeholder="Ask Captain Talon…" />
-    <button id="send">Send</button>
-    <button id="mute">🔊 On</button>
+      <div class="controls">
+        <input id="text" placeholder='Ask Captain Talon… (e.g. "How high can you fly?")'>
+        <button id="send">Send</button>
+        <button id="mute">🔊 On</button>
+      </div>
+    </div>
   </div>
-</div>
-</div>
 </div>
 
 <script>
-const overlay = document.getElementById("overlay");
-const log = document.getElementById("log");
-const text = document.getElementById("text");
-const sendBtn = document.getElementById("send");
-const muteBtn = document.getElementById("mute");
-const lowerBeak = document.getElementById("lowerBeak");
-const mouthGap = document.getElementById("mouthGap");
-const statusEl = document.getElementById("status");
+  const overlay = document.getElementById("overlay");
+  const mediaCard = document.getElementById("mediaCard");
+  const log = document.getElementById("log");
+  const text = document.getElementById("text");
+  const sendBtn = document.getElementById("send");
+  const muteBtn = document.getElementById("mute");
+  const statusEl = document.getElementById("status");
 
-let muted = false;
-let audioReady = false;
-let history = [];
+  let muted = false;
+  let audioReady = false;
+  let history = [];
 
-function addMsg(role, content) {
-  const div = document.createElement("div");
-  div.className = `msg ${role === "user" ? "me" : "bot"}`;
-  div.innerHTML = `<span class="label">${role === "user" ? "You:" : "Captain Talon:"}</span>${content}`;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-}
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",
+      '"':"&quot;","'":"&#039;"
+    }[m]));
+  }
 
-function speak(text) {
-  if (!audioReady || muted) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 1.0;
-  u.pitch = 0.9;
+  function addMsg(role, content) {
+    const div = document.createElement("div");
+    div.className = `msg ${role === "user" ? "me" : "bot"}`;
+    div.innerHTML =
+      `<span class="label">${role === "user" ? "You:" : "Captain Talon:"}</span>` +
+      escapeHtml(content);
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
 
-  u.onstart = () => {
-    lowerBeak.style.transform = "rotate(12deg)";
-    mouthGap.style.opacity = "1";
+  function playScreech() {
+    if (!audioReady || muted) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    const t = ctx.currentTime;
+
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(900, t);
+    o.frequency.exponentialRampToValueAtTime(2300, t + 0.18);
+    o.frequency.exponentialRampToValueAtTime(700, t + 0.55);
+
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(t);
+    o.stop(t + 0.6);
+    o.onended = () => ctx.close();
+  }
+
+  function speak(textToSpeak) {
+    if (!audioReady || muted || !("speechSynthesis" in window)) return;
+
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(textToSpeak);
+    u.rate = 1.02;
+    u.pitch = 0.9;
+
+    u.onstart = () => {
+      statusEl.textContent = "Captain Talon is speaking…";
+      mediaCard.classList.add("talking");
+      if (Math.random() < 0.35) setTimeout(playScreech, 120);
+    };
+
+    u.onend = () => {
+      statusEl.textContent = "Ready to chat, Little Wing.";
+      mediaCard.classList.remove("talking");
+    };
+
+    u.onerror = () => {
+      mediaCard.classList.remove("talking");
+    };
+
+    speechSynthesis.speak(u);
+  }
+
+  async function ask() {
+    const q = text.value.trim();
+    if (!q) return;
+
+    addMsg("user", q);
+    history.push({ role: "user", content: q });
+    text.value = "";
+    sendBtn.disabled = true;
+    statusEl.textContent = "Captain Talon is thinking…";
+
+    try {
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userText: q, history })
+      });
+
+      const data = await r.json();
+      const reply = data.reply || "Screee!";
+      addMsg("assistant", reply);
+      history.push({ role: "assistant", content: reply });
+      speak(reply);
+      if (Math.random() < 0.4) setTimeout(playScreech, 650);
+    } catch {
+      addMsg("assistant", "Screee… I can’t reach my nest right now.");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.onclick = ask;
+  text.onkeydown = e => e.key === "Enter" && ask();
+
+  muteBtn.onclick = () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? "🔇 Off" : "🔊 On";
+    speechSynthesis.cancel();
+    mediaCard.classList.remove("talking");
   };
-  u.onend = () => {
-    lowerBeak.style.transform = "rotate(0deg)";
-    mouthGap.style.opacity = "0";
+
+  window.startCaptainTalon = function () {
+    overlay.style.display = "none";
+    audioReady = true;
+
+    const intro =
+      "Screee! This is an awesome presentation, Austin! " +
+      "I’m Captain Talon, a majestic bald eagle. Ask me anything about eagles and nature, Little Wing!";
+    addMsg("assistant", intro);
+    history.push({ role: "assistant", content: intro });
+    speak(intro);
+    setTimeout(playScreech, 900);
   };
 
-  speechSynthesis.speak(u);
-}
-
-async function ask() {
-  const q = text.value.trim();
-  if (!q) return;
-
-  addMsg("user", q);
-  history.push({ role: "user", content: q });
-  text.value = "";
-
-  const r = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userText: q, history })
-  });
-
-  const data = await r.json();
-  const reply = data.reply || "Screee!";
-  addMsg("assistant", reply);
-  history.push({ role: "assistant", content: reply });
-  speak(reply);
-}
-
-sendBtn.onclick = ask;
-text.onkeydown = e => e.key === "Enter" && ask();
-
-muteBtn.onclick = () => {
-  muted = !muted;
-  muteBtn.textContent = muted ? "🔇 Off" : "🔊 On";
-};
-
-window.startCaptain = function() {
-  overlay.style.display = "none";
-  audioReady = true;
-  const intro = "Screee! This is an awesome presentation, Austin! I’m Captain Talon.";
-  addMsg("assistant", intro);
-  speak(intro);
-};
+  addMsg("assistant", "Screee! Click Start so I can talk out loud, Little Wing!");
 </script>
 
 </body>
