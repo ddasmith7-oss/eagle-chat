@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Captain Talon — Eagle Chat</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 0; background: #0b1220; color: #eaf2ff; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 18px; display: grid; gap: 16px; }
+    .card { background: #121c33; border: 1px solid #243155; border-radius: 16px; padding: 14px; }
+    .row { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+
+    /* Chat */
+    #log { height: 420px; overflow: auto; padding: 10px; border-radius: 12px; background: #0f1730; border: 1px solid #243155; }
+    .msg { margin: 10px 0; line-height: 1.35; }
+    .me { color: #b8d7ff; }
+    .bot { color: #ffe7a6; }
+    .label { font-weight: 700; margin-right: 6px; }
+    .controls { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; margin-top: 10px; }
+    input[type="text"] { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #243155; background: #0f1730; color: #eaf2ff; }
+    button { padding: 12px 14px; border-radius: 12px; border: 1px solid #243155; background: #1b2a52; color: #eaf2ff; cursor: pointer; }
+    button:hover { filter: brightness(1.08); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { padding: 8px 10px; border-radius: 999px; font-size: 14px; }
+
+    /* Eagle visual */
+    .eagleBox { display: grid; gap: 10px; justify-items: center; }
+    .status { font-size: 14px; opacity: .9; }
+    .talking { animation: pulse 0.7s infinite alternate; }
+    @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="margin: 6px 0 0;">🦅 Captain Talon — Eagle Chat</h1>
+
+    <div class="row">
+      <div class="card eagleBox">
+        <!-- Simple SVG “talking eagle” -->
+        <svg id="eagle" width="280" height="280" viewBox="0 0 280 280" aria-label="Talking eagle">
+          <defs>
+            <filter id="shadow"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.35"/></filter>
+          </defs>
+
+          <!-- Body -->
+          <circle cx="140" cy="150" r="110" fill="#3c2f24" filter="url(#shadow)"/>
+          <!-- Head -->
+          <circle cx="140" cy="110" r="78" fill="#f2f2f2" />
+          <!-- Eyes -->
+          <circle cx="110" cy="95" r="10" fill="#111"/>
+          <circle cx="170" cy="95" r="10" fill="#111"/>
+          <circle cx="113" cy="92" r="3" fill="#fff"/>
+          <circle cx="173" cy="92" r="3" fill="#fff"/>
+
+          <!-- Beak (top) -->
+          <path d="M140 112 C170 112 195 130 205 152 C180 160 160 158 140 150 C120 158 100 160 75 152 C85 130 110 112 140 112 Z"
+                fill="#f0b429"/>
+
+          <!-- Mouth (bottom) animated by JS -->
+          <path id="mouth"
+                d="M140 150 C164 154 182 164 190 178 C168 186 154 184 140 178 C126 184 112 186 90 178 C98 164 116 154 140 150 Z"
+                fill="#d9941e"/>
+
+          <!-- Chest -->
+          <ellipse cx="140" cy="188" rx="70" ry="55" fill="#6a4f3b" opacity="0.9"/>
+        </svg>
+
+        <div class="status" id="status">Ready to chat, Little Wing.</div>
+        <div class="chips">
+          <button class="chip" data-q="How high can you fly?">How high can you fly?</button>
+          <button class="chip" data-q="How good is your eyesight?">How good is your eyesight?</button>
+          <button class="chip" data-q="How big can your nest get?">How big is your nest?</button>
+          <button class="chip" data-q="What do you eat?">What do you eat?</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="log" role="log" aria-label="Chat log"></div>
+
+        <div class="controls">
+          <input id="text" type="text" placeholder='Ask Captain Talon… (example: "How high can you fly?")' />
+          <button id="send">Send</button>
+          <button id="mute">🔊 On</button>
+        </div>
+
+        <p style="margin: 10px 0 0; opacity: .85; font-size: 13px;">
+          Tip: This talks using your computer’s built-in voice (no extra setup). It also plays a quick eagle “screech” sound effect.
+        </p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const log = document.getElementById("log");
+  const text = document.getElementById("text");
+  const sendBtn = document.getElementById("send");
+  const muteBtn = document.getElementById("mute");
+  const statusEl = document.getElementById("status");
+  const mouth = document.getElementById("mouth");
+  const eagleSvg = document.getElementById("eagle");
+
+  let muted = false;
+  let history = []; // sent to server as {role, content}
+
+  function addMsg(role, content) {
+    const div = document.createElement("div");
+    div.className = `msg ${role === "user" ? "me" : "bot"}`;
+    div.innerHTML = `<span class="label">${role === "user" ? "You:" : "Captain Talon:"}</span>${escapeHtml(content)}`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  // Small “eagle screech” using WebAudio (no external files)
+  function playScreech() {
+    if (muted) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(900, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + 0.25);
+    o.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.6);
+
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.65);
+
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start();
+    o.stop(ctx.currentTime + 0.7);
+
+    o.onended = () => ctx.close();
+  }
+
+  // Talk using the browser’s SpeechSynthesis
+  function speak(textToSpeak) {
+    if (muted) return;
+
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(textToSpeak);
+    u.rate = 1.02;
+    u.pitch = 0.9;
+
+    u.onstart = () => startTalking();
+    u.onend = () => stopTalking();
+    u.onerror = () => stopTalking();
+
+    window.speechSynthesis.speak(u);
+  }
+
+  // Simple mouth flap animation while “talking”
+  let talkTimer = null;
+  function startTalking() {
+    statusEl.textContent = "Captain Talon is speaking…";
+    eagleSvg.classList.add("talking");
+    let open = false;
+    talkTimer = setInterval(() => {
+      open = !open;
+      mouth.setAttribute("d",
+        open
+          ? "M140 150 C170 160 190 175 196 194 C172 204 155 200 140 192 C125 200 108 204 84 194 C90 175 110 160 140 150 Z"
+          : "M140 150 C164 154 182 164 190 178 C168 186 154 184 140 178 C126 184 112 186 90 178 C98 164 116 154 140 150 Z"
+      );
+    }, 120);
+  }
+  function stopTalking() {
+    statusEl.textContent = "Ready to chat, Little Wing.";
+    eagleSvg.classList.remove("talking");
+    if (talkTimer) clearInterval(talkTimer);
+    talkTimer = null;
+    mouth.setAttribute("d","M140 150 C164 154 182 164 190 178 C168 186 154 184 140 178 C126 184 112 186 90 178 C98 164 116 154 140 150 Z");
+  }
+
+  async function ask() {
+    const q = text.value.trim();
+    if (!q) return;
+
+    addMsg("user", q);
+    history.push({ role: "user", content: q });
+    text.value = "";
+    sendBtn.disabled = true;
+    statusEl.textContent = "Captain Talon is thinking…";
+
+    try {
+      // Optional fun sound before reply
+      playScreech();
+
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userText: q, history })
+      });
+
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Request failed");
+
+      const reply = data.reply || "Screee! I lost my words in the wind.";
+      addMsg("assistant", reply);
+      history.push({ role: "assistant", content: reply });
+
+      // Speak it out loud
+      speak(reply);
+
+      // Optional little screech after the reply starts
+      setTimeout(playScreech, 500);
+
+    } catch (e) {
+      addMsg("assistant", "Screee… I can’t reach my nest server right now. (Try again!)");
+      statusEl.textContent = "Connection trouble.";
+      console.error(e);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.addEventListener("click", ask);
+  text.addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+
+  muteBtn.addEventListener("click", () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? "🔇 Off" : "🔊 On";
+    if (muted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+  });
+
+  document.querySelectorAll("button[data-q]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      text.value = btn.getAttribute("data-q");
+      ask();
+    });
+  });
+
+  // Start message
+  addMsg("assistant", "Screee! Hello, Little Wing! Ask me anything about eagles!");
+</script>
+</body>
+</html>
