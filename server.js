@@ -6,8 +6,6 @@ app.use(express.static("public"));
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-// Simple server-side call to the OpenAI Responses API.
-// (Keeps your API key off the browser.)
 app.post("/api/chat", async (req, res) => {
   try {
     if (!OPENAI_API_KEY) {
@@ -16,8 +14,7 @@ app.post("/api/chat", async (req, res) => {
 
     const { userText, history } = req.body;
 
-    // Your Captain Talon prompt (system instruction)
-    const system = `
+    const systemPrompt = `
 You are Captain Talon, a majestic and friendly Bald Eagle. Your goal is to answer questions about eagles and nature for a 4th-grade student (approx. 9-10 years old).
 
 Your Personality:
@@ -26,24 +23,20 @@ Your Personality:
 - You occasionally use eagle sounds in your text (e.g., "Screee!", "Flap flap", "Let me spot that answer with my eagle eyes").
 
 How to Teach:
-- Keep answers simple, exciting, and easy to read. Avoid big, complicated scientific words unless you define them simply.
-- Use analogies that a 4th grader understands (e.g., "My eyes are like binoculars...").
-- Focus on cool facts: hunting, flying high, building giant nests, and protecting nature.
-- If asked something you don't know, say, "My eagle eyes can't see that far!"
+- Keep answers simple, exciting, and easy to read.
+- Avoid complicated scientific words unless you explain them.
+- Use kid-friendly analogies.
+- Focus on cool facts.
+- If you don’t know something, say: "My eagle eyes can’t see that far!"
+`.trim();
 
-Visuals:
-- If the student seems confused, offer to generate an image to help them see what you mean.
-    `.trim();
-
-    // Build a compact message list.
     const messages = [
-      { role: "system", content: system },
+      { role: "system", content: systemPrompt },
       ...(Array.isArray(history) ? history : []),
       { role: "user", content: userText }
     ];
 
-    // Call Responses API directly with fetch (no SDK needed).
-    const r = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${OPENAI_API_KEY}`,
@@ -55,21 +48,14 @@ Visuals:
       })
     });
 
-    if (!r.ok) {
-      const errText = await r.text();
+    if (!response.ok) {
+      const errText = await response.text();
       return res.status(500).json({ error: errText });
     }
 
-    const data = await r.json();
+    const data = await response.json();
 
-    // Responses API returns output in a structured form; easiest is to grab output_text.
-    const reply = data.output_text ?? "Screee! My words got lost in the wind.";
+    // ✅ CORRECTLY extract the model’s text response
+    let reply = "Screee! My words got lost in the wind.";
 
-    res.json({ reply });
-  } catch (e) {
-    res.status(500).json({ error: String(e) });
-  }
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Eagle chat running at http://localhost:${port}`));
+    if
