@@ -11,13 +11,16 @@
     .card { background:#121c33; border:1px solid #243155; border-radius:16px; padding:14px; }
     .row { display:grid; grid-template-columns: 380px 1fr; gap:16px; }
     @media (max-width:900px){ .row{ grid-template-columns:1fr; } }
+
     #log { height:440px; overflow-y:auto; padding:10px; background:#0f1730; border-radius:12px; border:1px solid #243155; }
     .msg { margin:10px 0; line-height:1.35; }
     .me{ color:#b8d7ff; } .bot{ color:#ffe7a6; } .label{ font-weight:700; margin-right:6px; }
+
     .controls{ display:grid; grid-template-columns:1fr auto auto; gap:10px; margin-top:10px; align-items:center; }
     input{ padding:12px; border-radius:12px; border:1px solid #243155; background:#0f1730; color:#eaf2ff; }
     button{ padding:12px 14px; border-radius:12px; border:1px solid #243155; background:#1b2a52; color:#eaf2ff; cursor:pointer; font-weight:600; }
     button:hover{ filter:brightness(1.08); }
+
     .eagleBox{ display:grid; gap:10px; justify-items:center; align-content:start; }
     .status{ font-size:14px; opacity:.9; text-align:center; }
     .chips{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
@@ -30,7 +33,10 @@
 
     .lid{ transform-origin:center; transform:scaleY(0); transition:transform 90ms ease-in-out; }
     .blinkNow .lid{ transform:scaleY(1); }
-    #lowerBeak{ transition: transform 90ms ease-in-out; }
+
+    /* Smooth beak + mouth interior */
+    #lowerBeak { transition: transform 90ms ease-in-out; }
+    #mouthInside { transition: opacity 90ms ease-in-out, transform 90ms ease-in-out; }
 
     .overlay{ position:fixed; inset:0; background:rgba(5,10,20,.78); display:grid; place-items:center; z-index:50; padding:20px; }
     .overlayCard{ max-width:720px; width:100%; background:#121c33; border:1px solid #243155; border-radius:18px; padding:18px; text-align:center; }
@@ -41,7 +47,6 @@
 </head>
 
 <body>
-  <!-- IMPORTANT: inline onclick makes Start work even if event listeners fail -->
   <div id="overlay" class="overlay">
     <div class="overlayCard">
       <h2>🦅 Start Captain Talon</h2>
@@ -55,39 +60,93 @@
 
     <div class="row">
       <div class="card eagleBox">
-        <svg id="eagle" class="idleFloat" width="300" height="300" viewBox="0 0 300 300" aria-label="Talking eagle">
-          <circle cx="150" cy="168" r="118" fill="#3c2f24"/>
-          <circle cx="150" cy="118" r="84" fill="#f2f2f2"/>
 
-          <circle cx="120" cy="104" r="11" fill="#111"/>
-          <circle cx="180" cy="104" r="11" fill="#111"/>
-          <circle cx="123" cy="101" r="3.2" fill="#fff"/>
-          <circle cx="183" cy="101" r="3.2" fill="#fff"/>
+        <!-- NEW EAGLE FACE DESIGN -->
+        <svg id="eagle" class="idleFloat" width="320" height="320" viewBox="0 0 320 320" aria-label="Talking eagle">
+          <!-- Background circle -->
+          <circle cx="160" cy="168" r="132" fill="#0f1730" opacity="0.45"/>
 
-          <g id="blinkGroup">
-            <rect class="lid" id="lidL" x="103" y="90" width="34" height="28" rx="12" fill="#f2f2f2"/>
-            <rect class="lid" id="lidR" x="163" y="90" width="34" height="28" rx="12" fill="#f2f2f2"/>
+          <!-- Body -->
+          <circle cx="160" cy="206" r="118" fill="#3c2f24"/>
+
+          <!-- Head -->
+          <circle cx="160" cy="130" r="92" fill="#f2f2f2"/>
+
+          <!-- Cheek shadow (gives depth) -->
+          <ellipse cx="160" cy="154" rx="86" ry="66" fill="#e6e6e6" opacity="0.75"/>
+
+          <!-- Eyes -->
+          <g>
+            <circle cx="126" cy="116" r="13" fill="#111"/>
+            <circle cx="194" cy="116" r="13" fill="#111"/>
+            <circle cx="130" cy="112" r="4" fill="#fff"/>
+            <circle cx="198" cy="112" r="4" fill="#fff"/>
           </g>
 
+          <!-- Eyelids (blink) -->
+          <g id="blinkGroup">
+            <rect class="lid" x="110" y="104" width="32" height="26" rx="12" fill="#f2f2f2"/>
+            <rect class="lid" x="178" y="104" width="32" height="26" rx="12" fill="#f2f2f2"/>
+          </g>
+
+          <!-- Beak base (behind, to make it chunky) -->
           <path
-            d="M150 120 C182 120 208 140 218 164
-               C190 172 168 170 150 162
-               C132 170 110 172 82 164
-               C92 140 118 120 150 120 Z"
+            d="M160 142
+               C200 142 232 164 244 196
+               C212 210 186 206 160 196
+               C134 206 108 210 76 196
+               C88 164 120 142 160 142 Z"
+            fill="#f3c24a"
+            opacity="0.85"
+          />
+
+          <!-- Upper beak (front) -->
+          <path
+            d="M160 140
+               C204 140 238 166 246 198
+               C214 214 186 210 160 198
+               C134 210 106 214 74 198
+               C82 166 116 140 160 140 Z"
             fill="#f0b429"
           />
 
-          <g id="lowerBeak" style="transform-origin: 150px 162px; transform-box: fill-box;">
+          <!-- Mouth interior (shows when talking) -->
+          <path
+            id="mouthInside"
+            d="M160 198
+               C184 202 202 212 210 226
+               C186 236 170 234 160 228
+               C150 234 134 236 110 226
+               C118 212 136 202 160 198 Z"
+            fill="#2b1b16"
+            opacity="0"
+            style="transform-origin: 160px 208px; transform-box: fill-box;"
+          />
+
+          <!-- Lower beak (HINGED rotation) -->
+          <g id="lowerBeak" style="transform-origin: 160px 198px; transform-box: fill-box;">
             <path
-              d="M150 162 C176 166 196 178 205 194
-                 C180 204 162 202 150 196
-                 C138 202 120 204 95 194
-                 C104 178 124 166 150 162 Z"
+              d="M160 198
+                 C188 202 210 216 220 236
+                 C194 250 172 246 160 240
+                 C148 246 126 250 100 236
+                 C110 216 132 202 160 198 Z"
               fill="#d9941e"
             />
           </g>
 
-          <ellipse cx="150" cy="215" rx="76" ry="60" fill="#6a4f3b" opacity="0.95"/>
+          <!-- Beak line (separation) -->
+          <path
+            d="M86 198 C120 206 142 206 160 198 C178 206 200 206 234 198"
+            fill="none"
+            stroke="#b67813"
+            stroke-width="5"
+            stroke-linecap="round"
+            opacity="0.85"
+          />
+
+          <!-- Chest -->
+          <ellipse cx="160" cy="242" rx="80" ry="62" fill="#6a4f3b" opacity="0.95"/>
         </svg>
 
         <div class="status" id="status">Click Start to begin, Little Wing.</div>
@@ -108,6 +167,10 @@
           <button id="send">Send</button>
           <button id="mute">🔊 On</button>
         </div>
+
+        <p style="margin:10px 0 0; opacity:.85; font-size:13px;">
+          Tip: Click Start once, then everything (voice + mouth + blinking) works.
+        </p>
       </div>
     </div>
   </div>
@@ -118,9 +181,11 @@
   const text = document.getElementById("text");
   const sendBtn = document.getElementById("send");
   const muteBtn = document.getElementById("mute");
+
   const statusEl = document.getElementById("status");
   const eagleSvg = document.getElementById("eagle");
   const lowerBeak = document.getElementById("lowerBeak");
+  const mouthInside = document.getElementById("mouthInside");
 
   let muted = false;
   let history = [];
@@ -179,13 +244,17 @@
     loop();
   }
 
-  // Talking visuals (smooth beak)
+  // Talking visuals (smooth beak + mouth interior)
   let talkTimer = null;
   let currentOpen = 0;
   let targetOpen = 0;
 
   function setBeak(deg) {
     lowerBeak.style.transform = `rotate(${deg}deg)`;
+    // Mouth interior becomes visible as the beak opens
+    const opacity = Math.min(0.95, Math.max(0, deg / 10));
+    mouthInside.style.opacity = String(opacity);
+    mouthInside.style.transform = `scaleY(${0.85 + opacity * 0.45})`;
   }
 
   function startTalkingVisuals() {
@@ -298,10 +367,9 @@
     });
   });
 
-  // IMPORTANT: Global function so inline onclick works
+  // Start button
   window.startCaptainTalon = function startCaptainTalon() {
-    console.log("Start clicked!");
-    overlay.style.display = "none";               // you should SEE this immediately
+    overlay.style.display = "none";
     statusEl.textContent = "Started! Little Wing, I’m ready.";
 
     audioReady = true;
@@ -310,8 +378,6 @@
     const intro = "Screee! This is an awesome presentation, Austin! I’m Captain Talon, a majestic bald eagle. Ask me anything about eagles, flying, nests, and nature—Little Wing!";
     addMsg("assistant", intro);
     history.push({ role: "assistant", content: intro });
-
-    // Try speech + sound (if iframe blocks it, you’ll still see overlay disappear)
     try { speak(intro); } catch {}
     setTimeout(() => { try { playScreech(); } catch {} }, 900);
   };
