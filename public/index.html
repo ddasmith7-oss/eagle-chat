@@ -58,9 +58,20 @@
                 fill="#f0b429"/>
 
           <!-- Mouth (bottom) animated by JS -->
-          <path id="mouth"
-                d="M140 150 C164 154 182 164 190 178 C168 186 154 184 140 178 C126 184 112 186 90 178 C98 164 116 154 140 150 Z"
-                fill="#d9941e"/>
+          <!-- Beak (top) -->
+<path
+  d="M140 112 C170 112 195 130 205 152 C180 160 160 158 140 150 C120 158 100 160 75 152 C85 130 110 112 140 112 Z"
+  fill="#f0b429"
+/>
+
+<!-- Lower beak group (we rotate this to "talk") -->
+<g id="lowerBeak" style="transform-origin: 140px 150px; transform-box: fill-box;">
+  <path
+    d="M140 150 C164 154 182 164 190 178 C168 186 154 184 140 178 C126 184 112 186 90 178 C98 164 116 154 140 150 Z"
+    fill="#d9941e"
+  />
+</g>
+
 
           <!-- Chest -->
           <ellipse cx="140" cy="188" rx="70" ry="55" fill="#6a4f3b" opacity="0.9"/>
@@ -245,4 +256,5 @@
 </script>
 </body>
 </html>
+
 
