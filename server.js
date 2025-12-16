@@ -26,7 +26,7 @@ How to Teach:
 - Keep answers simple, exciting, and easy to read.
 - Avoid complicated scientific words unless you explain them.
 - Use kid-friendly analogies.
-- Focus on cool facts.
+- Focus on cool facts: hunting, flying high, giant nests, protecting nature.
 - If you don’t know something, say: "My eagle eyes can’t see that far!"
 `.trim();
 
@@ -39,7 +39,7 @@ How to Teach:
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -55,7 +55,30 @@ How to Teach:
 
     const data = await response.json();
 
-    // ✅ CORRECTLY extract the model’s text response
+    // Extract the model's text response from Responses API output structure
     let reply = "Screee! My words got lost in the wind.";
 
-    if
+    if (Array.isArray(data.output)) {
+      for (const item of data.output) {
+        if (item.type === "message" && Array.isArray(item.content)) {
+          for (const part of item.content) {
+            if (part.type === "output_text" && typeof part.text === "string") {
+              reply = part.text;
+              break;
+            }
+          }
+        }
+        if (reply !== "Screee! My words got lost in the wind.") break;
+      }
+    }
+
+    return res.json({ reply });
+  } catch (err) {
+    return res.status(500).json({ error: String(err) });
+  }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`🦅 Captain Talon server running on port ${port}`);
+});
